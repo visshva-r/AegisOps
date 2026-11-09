@@ -11,3 +11,4 @@ cdp_*.py
 run_browser_walk.py
 test_*.py
 read_pdf_text.py
+ppt/preview/
