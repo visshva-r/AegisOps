@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Run {{ run.run_id[:8] }} — AegisOps</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="hero small">
+    <h1>Assessment run</h1>
+    <p>ID: <code>{{ run.run_id }}</code> · Status:
+      <span class="tag status-{{ run.status.value }}">{{ run.status.value }}</span>
+      · Target: {{ run.target }}</p>
+    <a href="/">← New assessment</a>
+  </header>
+  <main class="grid">
+    {% if scope_msg %}
+    <div class="alert ok">{{ scope_msg }}</div>
+    {% endif %}
+    {% if banner %}
+    <div class="alert {{ banner[0] }}">{{ banner[1] }}</div>
+    {% endif %}
+    <section class="card">
+      <h2>Request</h2>
+      <p>{{ run.analyst_request }}</p>
+      {% if run.plan %}
+      <h3>Agent plan</h3>
+      <p class="muted">{{ run.plan.summary }}</p>
+      <ol>
+        {% for step in run.plan.steps %}
+        <li><strong>{{ step.tool }}</strong> ({{ step.mode.value }}) — {{ step.rationale }}</li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+      {% if run.status.value == "planned" %}
+      <form method="post" action="/assessments/{{ run.run_id }}/execute">
+        <button type="submit">Execute approved scan orchestration</button>
+      </form>
+      {% endif %}
+    </section>
+    <section class="card">
+      <h2>Tool runs</h2>
+      {% if run.tool_runs %}
+      <table>
+        <tr><th>Tool</th><th>Mode</th><th>Status</th><th>Output</th></tr>
+        {% for tr in run.tool_runs %}
+        <tr>
+          <td>{{ tr.tool }}</td>
+          <td>{{ tr.mode }}</td>
+          <td>{{ tr.status }}</td>
+          <td class="mono">{{ tr.output_ref }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p class="muted">No tools executed yet.</p>
+      {% endif %}
+    </section>
+    <section class="card full">
+      <h2>Unified findings (correlated)</h2>
+      {% if run.findings %}
+      <table>
+        <tr><th>Severity</th><th>Title</th><th>Sources</th><th>Confidence</th><th>Status</th><th>Kind</th></tr>
+        {% for f in run.findings %}
+        <tr>
+          <td><span class="sev {{ f.severity }}">{{ f.severity }}</span></td>
+          <td>{{ f.title }}</td>
+          <td>{{ f.sources | join(", ") }}</td>
+          <td>{{ f.confidence }}</td>
+          <td>{{ f.validation_status }}</td>
+          <td>{{ f.kind.value }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      <a class="btn" href="/assessments/{{ run.run_id }}/report.pdf">Download VAPT PDF</a>
+      {% if run.status.value == 'awaiting_approval' %}
+      <p class="hint">Draft PDF available · approval events are appended after you approve or deny validation.</p>
+      {% elif run.status.value == 'complete' %}
+      <p class="hint">Final report includes correlated findings, tool traceability, and audit/approval events.</p>
+      {% endif %}
+      {% else %}
+      <p class="muted">Run scans to ingest and correlate findings.</p>
+      {% endif %}
+    </section>
+    {% if pending_validation or run.status.value == "awaiting_approval" %}
+    <section class="card full warn">
+      <h2>Human approval required</h2>
+      <p>Active validation (Metasploit lab stub) requires explicit analyst approval.</p>
+      <form method="post" action="/assessments/{{ run.run_id }}/approve" class="row">
+        <input type="hidden" name="approved" value="true" />
+        <input name="note" placeholder="Approval note" />
+        <button type="submit">Approve validation</button>
+      </form>
+      <form method="post" action="/assessments/{{ run.run_id }}/approve" class="row">
+        <input type="hidden" name="approved" value="false" />
+        <input name="note" placeholder="Rejection reason" />
+        <button type="submit" class="secondary">Deny</button>
+      </form>
+    </section>
+    {% endif %}
+    <section class="card full">
+      <h2>Audit trail</h2>
+      <ul class="audit">
+        {% for a in run.audit %}
+        <li><span class="mono">{{ a.created_at }}</span> — <strong>{{ a.action }}</strong>: {{ a.detail }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AegisOps — VAPT Agent</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="hero">
+    <h1>AegisOps</h1>
+    <p>AI-powered unified VAPT agent · authorized lab assessments only · v{{ version }}</p>
+  </header>
+  <main class="grid">
+    <section class="card">
+      <h2>New assessment</h2>
+      {% if error %}
+      <div class="alert error">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="/assessments">
+        <label>Analyst request (natural language)</label>
+        <textarea name="analyst_request" rows="4" required placeholder="Perform web and network assessment on the authorized lab target...">Perform authorized web and network VAPT on lab target and produce client-ready report.</textarea>
+        <label>Authorized target</label>
+        <input name="target" value="lab.vapt.local" required />
+        <label>Exclusions (optional)</label>
+        <input name="exclusions" placeholder="e.g. /backup" />
+        <button type="submit">Validate scope &amp; generate plan</button>
+      </form>
+      <p class="hint">Allowed: lab.vapt.local, 10.10.10.10, localhost, 127.0.0.1, 10.10.*</p>
+    </section>
+    <section class="card">
+      <h2>Integration matrix</h2>
+      <table>
+        <tr><th>Tool</th><th>Status</th><th>Role</th></tr>
+        {% for row in matrix %}
+        <tr><td>{{ row.tool }}</td><td><span class="tag {{ row.status|lower }}">{{ row.status }}</span></td><td>{{ row.role }}</td></tr>
+        {% endfor %}
+      </table>
+    </section>
+    {% if recent_runs %}
+    <section class="card full">
+      <h2>Recent lab runs</h2>
+      <table>
+        <tr><th>Run</th><th>Target</th><th>Status</th><th>Created</th></tr>
+        {% for r in recent_runs %}
+        <tr>
+          <td><a href="/assessments/{{ r.id }}">{{ r.id[:8] }}…</a></td>
+          <td>{{ r.target }}</td>
+          <td><span class="tag status-{{ r.status }}">{{ r.status }}</span></td>
+          <td class="mono">{{ r.created_at[:19] }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,9 @@
+- Nikto v2.5.0
++ Target IP:          10.10.10.10
++ Target Hostname:    lab.vapt.local
++ Target Port:        8080
++ Server: Apache/2.4.41
++ OSVDB-3233: /icons/ directory indexing enabled
++ /admin/: Admin login page found
++ Cookie PHPSESSID created without the httponly flag
++ Apache/2.4.41 appears to be outdated (current is at least Apache/2.4.54)

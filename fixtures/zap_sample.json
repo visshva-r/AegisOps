@@ -1,0 +1,30 @@
+{
+  "site": [
+    {
+      "@name": "http://lab.vapt.local:8080",
+      "alerts": [
+        {
+          "name": "Missing Anti-clickjacking Header",
+          "riskdesc": "Medium (Medium)",
+          "desc": "The response does not protect against 'ClickJacking' attacks.",
+          "solution": "Use Content-Security-Policy frame-ancestors or X-Frame-Options.",
+          "reference": "https://owasp.org/www-community/attacks/Clickjacking"
+        },
+        {
+          "name": "Cross Site Scripting (Reflected)",
+          "riskdesc": "High (High)",
+          "desc": "Reflected XSS identified on search parameter.",
+          "solution": "Encode output and validate input.",
+          "reference": "CWE-79"
+        },
+        {
+          "name": "X-Content-Type-Options Header Missing",
+          "riskdesc": "Low (Low)",
+          "desc": "The Anti-MIME-Sniffing header X-Content-Type-Options was not set.",
+          "solution": "Set X-Content-Type-Options: nosniff",
+          "reference": "CWE-693"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+data/
+fixtures/nmap_live_*
+.pytest_cache/
+.chrome_profile/
+scratch/
+scratch_logs.json
+cdp_*.py
+run_browser_walk.py
+test_*.py
+read_pdf_text.py
