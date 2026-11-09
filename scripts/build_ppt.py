@@ -27,6 +27,15 @@ SLIDE_W = Inches(13.333)
 SLIDE_H = Inches(7.5)
 TOTAL_SLIDES = 14
 
+# Safe layout band (inches): content must end above 6.15
+FOOTER_LINE_Y = 6.82
+FOOTER_TEXT_Y = 6.87
+IMAGE_TOP = 1.72
+IMAGE_MAX_H = 4.28
+CAPTION_Y = 6.05
+BODY_TOP = 1.72
+BODY_TOP_SUB = 2.22
+
 
 def _set_bg(slide, color: RGBColor) -> None:
     fill = slide.background.fill
@@ -43,34 +52,46 @@ def _bar(slide, height=Inches(0.14)) -> None:
 
 def _footer(slide, index: int) -> None:
     line = slide.shapes.add_shape(
-        MSO_SHAPE.RECTANGLE, Inches(0.5), Inches(6.88), Inches(12.3), Inches(0.02)
+        MSO_SHAPE.RECTANGLE, Inches(0.5), Inches(FOOTER_LINE_Y), Inches(12.3), Inches(0.02)
     )
     line.fill.solid()
     line.fill.fore_color.rgb = RGBColor(0xE2, 0xE8, 0xF0)
     line.line.fill.background()
-    tx = slide.shapes.add_textbox(Inches(0.5), Inches(6.92), Inches(12.3), Inches(0.35))
-    p = tx.text_frame.paragraphs[0]
-    p.text = f"AegisOps  |  DataOps Innovation Hackathon 2026  |  PS-1     Slide {index}/{TOTAL_SLIDES}"
-    p.font.size = Pt(10)
-    p.font.color.rgb = MUTED
-    p.alignment = PP_ALIGN.RIGHT
+    left = slide.shapes.add_textbox(Inches(0.55), Inches(FOOTER_TEXT_Y), Inches(7), Inches(0.3))
+    lp = left.text_frame.paragraphs[0]
+    lp.text = "AegisOps · DataOps Innovation Hackathon 2026 · PS-1"
+    lp.font.size = Pt(9)
+    lp.font.color.rgb = MUTED
+    right = slide.shapes.add_textbox(Inches(10.3), Inches(FOOTER_TEXT_Y), Inches(2.5), Inches(0.3))
+    rp = right.text_frame.paragraphs[0]
+    rp.text = f"Slide {index}/{TOTAL_SLIDES}"
+    rp.font.size = Pt(9)
+    rp.font.color.rgb = MUTED
+    rp.alignment = PP_ALIGN.RIGHT
 
 
-def _heading(slide, title: str, subtitle: str | None = None, dark: bool = False) -> None:
+def _heading(slide, title: str, subtitle: str | None = None, dark: bool = False) -> float:
+    """Return Y (inches) where body content should start."""
     color = WHITE if dark else NAVY
     sub_color = SKY if dark else MUTED
-    tx = slide.shapes.add_textbox(Inches(0.65), Inches(0.42), Inches(12), Inches(0.8))
-    p = tx.text_frame.paragraphs[0]
+    tx = slide.shapes.add_textbox(Inches(0.65), Inches(0.48), Inches(12.2), Inches(0.72))
+    tf = tx.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
     p.text = title
-    p.font.size = Pt(30)
+    p.font.size = Pt(28)
     p.font.bold = True
     p.font.color.rgb = color
     if subtitle:
-        st = slide.shapes.add_textbox(Inches(0.65), Inches(1.05), Inches(12), Inches(0.5))
-        sp = st.text_frame.paragraphs[0]
+        st = slide.shapes.add_textbox(Inches(0.65), Inches(1.22), Inches(12.2), Inches(0.68))
+        stf = st.text_frame
+        stf.word_wrap = True
+        sp = stf.paragraphs[0]
         sp.text = subtitle
-        sp.font.size = Pt(14)
+        sp.font.size = Pt(13)
         sp.font.color.rgb = sub_color
+        return BODY_TOP_SUB
+    return BODY_TOP
 
 
 def _bullets(
@@ -98,10 +119,12 @@ def _bullets(
 
 
 def _caption(slide, text: str) -> None:
-    tx = slide.shapes.add_textbox(Inches(0.65), Inches(6.55), Inches(12), Inches(0.35))
-    p = tx.text_frame.paragraphs[0]
+    tx = slide.shapes.add_textbox(Inches(0.65), Inches(CAPTION_Y), Inches(12), Inches(0.45))
+    tf = tx.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
     p.text = text
-    p.font.size = Pt(11)
+    p.font.size = Pt(10)
     p.font.italic = True
     p.font.color.rgb = MUTED
     p.alignment = PP_ALIGN.CENTER
@@ -120,21 +143,7 @@ def _fit_image(slide, path: Path, left_in: float, top_in: float, max_w_in: float
         h = max_h_in
         w = h / aspect
     left = left_in + (max_w_in - w) / 2
-    pic = slide.shapes.add_picture(str(path), Inches(left), Inches(top_in), width=Inches(w))
-    # subtle border
-    frame = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE,
-        Inches(left) - Inches(0.04),
-        Inches(top_in) - Inches(0.04),
-        Inches(w) + Inches(0.08),
-        Inches(h) + Inches(0.08),
-    )
-    frame.fill.background()
-    frame.line.color.rgb = RGBColor(0xCB, 0xD5, 0xE1)
-    frame.line.width = Pt(1.5)
-    # send border behind picture
-    slide.shapes._spTree.remove(frame._element)
-    slide.shapes._spTree.insert(2, frame._element)
+    slide.shapes.add_picture(str(path), Inches(left), Inches(top_in), width=Inches(w))
 
 
 def _image_slide(slide, title: str, path: Path, caption: str, index: int) -> None:
@@ -142,7 +151,7 @@ def _image_slide(slide, title: str, path: Path, caption: str, index: int) -> Non
     _bar(slide)
     _heading(slide, title)
     _footer(slide, index)
-    _fit_image(slide, path, 0.85, 1.45, 11.6, 4.85)
+    _fit_image(slide, path, 0.75, IMAGE_TOP, 11.85, IMAGE_MAX_H)
     _caption(slide, caption)
 
 
@@ -151,48 +160,32 @@ def _content_slide(
 ) -> None:
     _set_bg(slide, LIGHT_BG)
     _bar(slide)
-    _heading(slide, title, subtitle)
+    top = _heading(slide, title, subtitle)
     _footer(slide, index)
-    _bullets(slide, items)
+    _bullets(slide, items, top=top)
 
 
-def _arch_diagram(slide) -> None:
-    """Simple horizontal pipeline diagram."""
-    steps = [
-        "Scope",
-        "Plan",
-        "Scan",
-        "Correlate",
-        "Approve",
-        "PDF",
-    ]
-    x0 = 0.7
-    y = 2.05
-    w = 1.75
-    h = 0.65
-    gap = 0.28
-    for i, label in enumerate(steps):
-        left = x0 + i * (w + gap)
-        box = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(y), Inches(w), Inches(h)
-        )
-        box.fill.solid()
-        box.fill.fore_color.rgb = BOX_FILL
-        box.line.color.rgb = ACCENT
-        tf = box.text_frame
-        tf.paragraphs[0].text = label
-        tf.paragraphs[0].font.size = Pt(13)
-        tf.paragraphs[0].font.bold = True
-        tf.paragraphs[0].font.color.rgb = NAVY
-        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
-        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        if i < len(steps) - 1:
-            arr = slide.shapes.add_textbox(
-                Inches(left + w + 0.05), Inches(y + 0.15), Inches(gap), Inches(0.4)
-            )
-            arr.text_frame.paragraphs[0].text = "→"
-            arr.text_frame.paragraphs[0].font.size = Pt(18)
-            arr.text_frame.paragraphs[0].font.color.rgb = ACCENT
+def _arch_flow_banner(slide, top: float = BODY_TOP) -> None:
+    """Single-line pipeline (no overlapping shapes)."""
+    box = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(0.65),
+        Inches(top),
+        Inches(12.05),
+        Inches(0.72),
+    )
+    box.fill.solid()
+    box.fill.fore_color.rgb = BOX_FILL
+    box.line.color.rgb = ACCENT
+    tf = box.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.text = "Request  →  Scope  →  Plan  →  Scan  →  Correlate  →  Approve  →  PDF"
+    p.font.size = Pt(15)
+    p.font.bold = True
+    p.font.color.rgb = NAVY
+    p.alignment = PP_ALIGN.CENTER
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
 
 
 def main() -> None:
@@ -205,34 +198,52 @@ def main() -> None:
     s = prs.slides.add_slide(blank)
     _set_bg(s, NAVY)
     _bar(s, Inches(0.1))
-    _heading(s, "AegisOps", "Unified AI VAPT Agent  ·  Problem Statement 1", dark=True)
-    team = s.shapes.add_textbox(Inches(0.85), Inches(2.1), Inches(11.5), Inches(3.8))
-    tf = team.text_frame
-    lines = [
-        ("Participant: Visshva R (solo)", WHITE, 21),
-        ("Event: DataOps Innovation Hackathon 2026", WHITE, 19),
-        ("GitHub: github.com/visshva-r/AegisOps", SKY, 19),
-        ("", WHITE, 10),
-        (
-            "Mission: Turn analyst intent into correlated, auditable VAPT results "
-            "with lab-only scope control and mandatory human approval.",
-            SKY,
-            18,
-        ),
-    ]
-    for i, (line, color, size) in enumerate(lines):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+    title = s.shapes.add_textbox(Inches(0.85), Inches(0.55), Inches(11.5), Inches(0.75))
+    title.text_frame.paragraphs[0].text = "AegisOps"
+    title.text_frame.paragraphs[0].font.size = Pt(40)
+    title.text_frame.paragraphs[0].font.bold = True
+    title.text_frame.paragraphs[0].font.color.rgb = WHITE
+    sub = s.shapes.add_textbox(Inches(0.85), Inches(1.3), Inches(11.5), Inches(0.45))
+    sub.text_frame.paragraphs[0].text = "Unified AI VAPT Agent · Problem Statement 1"
+    sub.text_frame.paragraphs[0].font.size = Pt(16)
+    sub.text_frame.paragraphs[0].font.color.rgb = SKY
+    meta = s.shapes.add_textbox(Inches(0.85), Inches(2.05), Inches(11.5), Inches(1.35))
+    mtf = meta.text_frame
+    mtf.word_wrap = True
+    for i, (line, color, size) in enumerate(
+        [
+            ("Participant: Visshva R (solo)", WHITE, 20),
+            ("Event: DataOps Innovation Hackathon 2026", WHITE, 18),
+            ("GitHub: github.com/visshva-r/AegisOps", SKY, 18),
+        ]
+    ):
+        p = mtf.paragraphs[0] if i == 0 else mtf.add_paragraph()
         p.text = line
         p.font.size = Pt(size)
         p.font.color.rgb = color
-        p.space_after = Pt(12)
+        p.space_after = Pt(10)
+    mission = s.shapes.add_textbox(Inches(0.85), Inches(3.55), Inches(10.8), Inches(1.75))
+    misf = mission.text_frame
+    misf.word_wrap = True
+    mp = misf.paragraphs[0]
+    mp.text = (
+        "Mission: Turn analyst intent into correlated, auditable VAPT results "
+        "with lab-only scope control and mandatory human approval."
+    )
+    mp.font.size = Pt(17)
+    mp.font.color.rgb = SKY
+    mp.line_spacing = 1.25
     _footer(s, 1)
 
     # Slide 2 — Team & PS (split)
     s = prs.slides.add_slide(blank)
     _set_bg(s, LIGHT_BG)
     _bar(s)
-    _heading(s, "1. Team Introduction & Problem Statement")
+    body_top = _heading(
+        s,
+        "1. Team Introduction & Problem Statement",
+        "Dashboard: Live / Import / Planned matrix",
+    )
     _footer(s, 2)
     _bullets(
         s,
@@ -242,19 +253,12 @@ def main() -> None:
             "Product: conversational orchestration + audit trail",
             "Principle: augment analysts, never bypass scope or approval",
         ],
-        width=5.4,
-        top=1.7,
-        size=17,
+        width=5.1,
+        top=body_top,
+        size=16,
+        height=4.2,
     )
-    _fit_image(
-        s,
-        EVIDENCE / "shot1_home_recent.png",
-        6.35,
-        1.55,
-        6.55,
-        4.75,
-    )
-    _caption(s, "Live/Import/Planned matrix and recent lab runs.")
+    _fit_image(s, EVIDENCE / "shot1_home_recent.png", 5.95, body_top, 6.75, IMAGE_MAX_H)
 
     # Slide 3 — Problem
     s = prs.slides.add_slide(blank)
@@ -284,9 +288,9 @@ def main() -> None:
     s = prs.slides.add_slide(blank)
     _set_bg(s, LIGHT_BG)
     _bar(s)
-    _heading(s, "4. Project Architecture & Structure")
+    arch_top = _heading(s, "4. Project Architecture & Structure")
     _footer(s, 5)
-    _arch_diagram(s)
+    _arch_flow_banner(s, top=arch_top)
     _bullets(
         s,
         [
@@ -295,8 +299,9 @@ def main() -> None:
             "Correlation engine: dedupe, confidence, risk order",
             "ReportLab generates the client VAPT PDF",
         ],
-        top=3.05,
+        top=arch_top + 1.0,
         size=17,
+        height=4.0,
     )
 
     # Slide 6 — Architecture screenshot
@@ -403,16 +408,28 @@ def main() -> None:
     s = prs.slides.add_slide(blank)
     _set_bg(s, NAVY)
     _heading(s, "Thank You", "github.com/visshva-r/AegisOps", dark=True)
-    box = s.shapes.add_textbox(Inches(1.0), Inches(2.75), Inches(11.3), Inches(2.0))
-    p = box.text_frame.paragraphs[0]
-    p.text = (
-        "Questions welcome.\n\n"
-        "AegisOps keeps the analyst in control:\n"
-        "scope, evidence, approval, and report."
-    )
-    p.font.size = Pt(26)
-    p.font.color.rgb = WHITE
-    p.alignment = PP_ALIGN.CENTER
+    box = s.shapes.add_textbox(Inches(1.25), Inches(3.35), Inches(10.8), Inches(2.35))
+    tf = box.text_frame
+    tf.word_wrap = True
+    p1 = tf.paragraphs[0]
+    p1.text = "Questions welcome."
+    p1.font.size = Pt(28)
+    p1.font.color.rgb = WHITE
+    p1.alignment = PP_ALIGN.CENTER
+    p1.space_after = Pt(42)
+    p1.line_spacing = 1.0
+    p2 = tf.add_paragraph()
+    p2.text = "AegisOps keeps the analyst in control:"
+    p2.font.size = Pt(21)
+    p2.font.color.rgb = SKY
+    p2.alignment = PP_ALIGN.CENTER
+    p2.space_after = Pt(18)
+    p2.line_spacing = 1.15
+    p3 = tf.add_paragraph()
+    p3.text = "scope · evidence · approval · report"
+    p3.font.size = Pt(22)
+    p3.font.color.rgb = WHITE
+    p3.alignment = PP_ALIGN.CENTER
     _footer(s, 14)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
